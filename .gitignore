@@ -1,0 +1,19 @@
+# General
+.DS_Store
+.idea/
+.vscode/
+
+# Golang
+lambdas/bin/
+lambdas/dist/
+
+# Protobuf generated files (if any are not checked in)
+# For this repo, we might check them in, so we leave it empty for now.
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/crash.log
+terraform/*.tfvars

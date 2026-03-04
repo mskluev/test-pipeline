@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package events.v1;
+
+option go_package = "github.com/mskluev/test-pipeline/lambdas/pkg/proto/events/v1";
+
+// TriggerEvent is sent by EventBridge when a new file arrives in the input bucket
+message TriggerEvent {
+  string bucket = 1;
+  string key = 2;
+  int64 size = 3;
+}
+
+// ProcessingEvent is sent to SNS/SQS for the processor lambda
+message ProcessingEvent {
+  string execution_id = 1;
+  string s3_uri = 2;
+}
+
+// SageMakerEvent is sent to the SageMaker caller lambda
+message SageMakerEvent {
+  string execution_id = 1;
+  string payload_uri = 2;
+}

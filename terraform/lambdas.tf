@@ -1,0 +1,129 @@
+data "aws_iam_policy_document" "lambda_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    effect  = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "lambda_role" {
+  name               = "mskluev-lambda-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Common policy for lambdas (S3, SNS, SQS permissions)
+resource "aws_iam_role_policy" "lambda_policy" {
+  name = "mskluev-lambda-permissions"
+  role = aws_iam_role.lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.input.arn,
+          "${aws_s3_bucket.input.arn}/*",
+          aws_s3_bucket.output.arn,
+          "${aws_s3_bucket.output.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = ["sns:Publish"]
+        Resource = [
+          aws_sns_topic.process_topic.arn,
+          aws_sns_topic.sagemaker_topic.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          aws_sqs_queue.process_queue.arn,
+          aws_sqs_queue.sagemaker_queue.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = ["sagemaker:InvokeEndpointAsync"]
+        Resource = ["*"] # Best practice: restrict to specific endpoint ARN
+      }
+    ]
+  })
+}
+
+# s3-trigger Lambda
+data "archive_file" "s3_trigger_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/bin/s3-trigger" # Points to the compiled binary
+  output_path = "${path.module}/s3_trigger.zip"
+}
+
+resource "aws_lambda_function" "s3_trigger" {
+  filename         = data.archive_file.s3_trigger_zip.output_path
+  source_code_hash = data.archive_file.s3_trigger_zip.output_base64sha256
+  function_name    = "mskluev-s3-trigger"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "bootstrap"
+  runtime          = "provided.al2" # Standard runtime for Go 1.21+
+}
+
+# processor Lambda
+data "archive_file" "processor_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/bin/processor"
+  output_path = "${path.module}/processor.zip"
+}
+
+resource "aws_lambda_function" "processor" {
+  filename         = data.archive_file.processor_zip.output_path
+  source_code_hash = data.archive_file.processor_zip.output_base64sha256
+  function_name    = "mskluev-processor"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "bootstrap"
+  runtime          = "provided.al2"
+}
+
+# sagemaker-caller Lambda
+data "archive_file" "sagemaker_caller_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/bin/sagemaker-caller"
+  output_path = "${path.module}/sagemaker_caller.zip"
+}
+
+resource "aws_lambda_function" "sagemaker_caller" {
+  filename         = data.archive_file.sagemaker_caller_zip.output_path
+  source_code_hash = data.archive_file.sagemaker_caller_zip.output_base64sha256
+  function_name    = "mskluev-sagemaker-caller"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "bootstrap"
+  runtime          = "provided.al2"
+}
+
+# SQS event source mappings
+resource "aws_lambda_event_source_mapping" "processor_sqs" {
+  event_source_arn = aws_sqs_queue.process_queue.arn
+  function_name    = aws_lambda_function.processor.arn
+}
+
+resource "aws_lambda_event_source_mapping" "sagemaker_sqs" {
+  event_source_arn = aws_sqs_queue.sagemaker_queue.arn
+  function_name    = aws_lambda_function.sagemaker_caller.arn
+}
