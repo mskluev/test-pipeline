@@ -27,6 +27,7 @@ type TriggerEvent struct {
 	Bucket        string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	CorrelationId string                 `protobuf:"bytes,4,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,11 +83,19 @@ func (x *TriggerEvent) GetSize() int64 {
 	return 0
 }
 
+func (x *TriggerEvent) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 // ProcessingEvent is sent to SNS/SQS for the processor lambda
 type ProcessingEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
 	S3Uri         string                 `protobuf:"bytes,2,opt,name=s3_uri,json=s3Uri,proto3" json:"s3_uri,omitempty"`
+	CorrelationId string                 `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -135,11 +144,19 @@ func (x *ProcessingEvent) GetS3Uri() string {
 	return ""
 }
 
+func (x *ProcessingEvent) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 // SageMakerEvent is sent to the SageMaker caller lambda
 type SageMakerEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
 	PayloadUri    string                 `protobuf:"bytes,2,opt,name=payload_uri,json=payloadUri,proto3" json:"payload_uri,omitempty"`
+	CorrelationId string                 `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -188,22 +205,32 @@ func (x *SageMakerEvent) GetPayloadUri() string {
 	return ""
 }
 
+func (x *SageMakerEvent) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 var File_events_v1_events_proto protoreflect.FileDescriptor
 
 const file_events_v1_events_proto_rawDesc = "" +
 	"\n" +
-	"\x16events/v1/events.proto\x12\tevents.v1\"L\n" +
+	"\x16events/v1/events.proto\x12\tevents.v1\"s\n" +
 	"\fTriggerEvent\x12\x16\n" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\x03R\x04size\"K\n" +
+	"\x04size\x18\x03 \x01(\x03R\x04size\x12%\n" +
+	"\x0ecorrelation_id\x18\x04 \x01(\tR\rcorrelationId\"r\n" +
 	"\x0fProcessingEvent\x12!\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\vexecutionId\x12\x15\n" +
-	"\x06s3_uri\x18\x02 \x01(\tR\x05s3Uri\"T\n" +
+	"\x06s3_uri\x18\x02 \x01(\tR\x05s3Uri\x12%\n" +
+	"\x0ecorrelation_id\x18\x03 \x01(\tR\rcorrelationId\"{\n" +
 	"\x0eSageMakerEvent\x12!\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\vexecutionId\x12\x1f\n" +
 	"\vpayload_uri\x18\x02 \x01(\tR\n" +
-	"payloadUriB>Z<github.com/mskluev/test-pipeline/lambdas/pkg/proto/events/v1b\x06proto3"
+	"payloadUri\x12%\n" +
+	"\x0ecorrelation_id\x18\x03 \x01(\tR\rcorrelationIdB>Z<github.com/mskluev/test-pipeline/lambdas/pkg/proto/events/v1b\x06proto3"
 
 var (
 	file_events_v1_events_proto_rawDescOnce sync.Once

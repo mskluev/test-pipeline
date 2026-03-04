@@ -9,16 +9,19 @@ message TriggerEvent {
   string bucket = 1;
   string key = 2;
   int64 size = 3;
+  string correlation_id = 4;
 }
 
 // ProcessingEvent is sent to SNS/SQS for the processor lambda
 message ProcessingEvent {
   string execution_id = 1;
   string s3_uri = 2;
+  string correlation_id = 3;
 }
 
 // SageMakerEvent is sent to the SageMaker caller lambda
 message SageMakerEvent {
   string execution_id = 1;
   string payload_uri = 2;
+  string correlation_id = 3;
 }
