@@ -1,0 +1,15 @@
+{
+    "inputs": [
+        {
+            "name": "JSON_INPUT",
+            "shape": [
+                1,
+                1
+            ],
+            "datatype": "BYTES",
+            "data": [
+                "{\"sentences\": [\"This is the first sentence to be translated.\", \"Here is a second, slightly longer sentence to test the word count logic.\"], \"sourceLanguage\": \"spa\", \"targetLanguage\": \"eng\"}"
+            ]
+        }
+    ]
+}

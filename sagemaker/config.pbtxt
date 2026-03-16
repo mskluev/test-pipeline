@@ -1,0 +1,25 @@
+name: "dummy_translation"
+backend: "python"
+max_batch_size: 8
+
+# Enables dynamic batching to group multiple client requests
+dynamic_batching {
+  preferred_batch_size: [ 4, 8 ]
+  max_queue_delay_microseconds: 100
+}
+
+input [
+  {
+    name: "JSON_INPUT"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  }
+]
+
+output [
+  {
+    name: "JSON_OUTPUT"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  }
+]

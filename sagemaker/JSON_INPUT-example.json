@@ -1,0 +1,8 @@
+{
+    "sentences": [
+        "This is the first sentence to be translated.",
+        "Here is a second, slightly longer sentence to test the word count logic."
+    ],
+    "sourceLanguage": "spa",
+    "targetLanguage": "eng"
+}
