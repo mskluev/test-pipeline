@@ -10,8 +10,9 @@ data "aws_iam_policy_document" "lambda_assume_role" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name               = "mskluev-lambda-role"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name                 = "service-mskluev-lambda-role"
+  assume_role_policy   = data.aws_iam_policy_document.lambda_assume_role.json
+  permissions_boundary = var.permissions_boundary
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
@@ -21,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # Common policy for lambdas (S3, SNS, SQS permissions)
 resource "aws_iam_role_policy" "lambda_policy" {
-  name = "mskluev-lambda-permissions"
+  name = "service-mskluev-lambda-permissions"
   role = aws_iam_role.lambda_role.id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -61,10 +62,23 @@ resource "aws_iam_role_policy" "lambda_policy" {
         ]
       },
       {
-        Effect = "Allow"
-        Action = ["sagemaker:InvokeEndpointAsync"]
+        Effect   = "Allow"
+        Action   = ["sagemaker:InvokeEndpointAsync"]
         Resource = ["*"] # Best practice: restrict to specific endpoint ARN
+      },
+      # When a Lambda is VPC-enabled, it doesn't just "float" in your network. 
+      # AWS has to create a networking bridge between the Lambda service and your private subnets. 
+      # To do this, the Lambda's execution role must be allowed to manage those network interfaces.
+      {
+        Effect = "Allow"
+        Resource = "*"
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
+        ]
       }
+
     ]
   })
 }
@@ -83,6 +97,11 @@ resource "aws_lambda_function" "s3_trigger" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2" # Standard runtime for Go 1.21+
+
+  vpc_config {
+    subnet_ids = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  }
 }
 
 # processor Lambda
@@ -99,6 +118,11 @@ resource "aws_lambda_function" "processor" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2"
+
+  vpc_config {
+    subnet_ids = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  }
 }
 
 # sagemaker-caller Lambda
@@ -115,6 +139,11 @@ resource "aws_lambda_function" "sagemaker_caller" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2"
+
+  vpc_config {
+    subnet_ids = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  }
 }
 
 # SQS event source mappings
