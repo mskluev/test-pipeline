@@ -104,6 +104,16 @@ resource "aws_lambda_function" "s3_trigger" {
   }
 }
 
+resource "aws_lambda_function_event_invoke_config" "s3_trigger_dest" {
+  function_name = aws_lambda_function.s3_trigger.function_name
+
+  destination_config {
+    on_success {
+      destination = aws_sns_topic.process_topic.arn
+    }
+  }
+}
+
 # processor Lambda
 data "archive_file" "processor_zip" {
   type        = "zip"
@@ -146,11 +156,6 @@ resource "aws_lambda_function" "sagemaker_caller" {
   }
 }
 
-# SQS event source mappings
-resource "aws_lambda_event_source_mapping" "processor_sqs" {
-  event_source_arn = aws_sqs_queue.process_queue.arn
-  function_name    = aws_lambda_function.processor.arn
-}
 
 resource "aws_lambda_event_source_mapping" "sagemaker_sqs" {
   event_source_arn = aws_sqs_queue.sagemaker_queue.arn

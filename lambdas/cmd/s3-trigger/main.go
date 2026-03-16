@@ -7,9 +7,10 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	pb "github.com/mskluev/test-pipeline/lambdas/pkg/proto/events/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func HandleRequest(ctx context.Context, event interface{}) (string, error) {
+func HandleRequest(ctx context.Context, event interface{}) (json.RawMessage, error) {
 	if lc, ok := lambdacontext.FromContext(ctx); ok {
 		fmt.Printf("Lambda Context: %+v\n", lc)
 	}
@@ -33,7 +34,12 @@ func HandleRequest(ctx context.Context, event interface{}) (string, error) {
 	}
 	fmt.Printf("Passing correlation_id %s through to next stage via ProcessingEvent\n", nextEvent.CorrelationId)
 
-	return "Success", nil
+	b, err := protojson.Marshal(nextEvent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal nextEvent: %w", err)
+	}
+
+	return json.RawMessage(b), nil
 }
 
 func main() {
