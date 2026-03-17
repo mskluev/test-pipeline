@@ -102,14 +102,10 @@ resource "aws_lambda_function" "s3_trigger" {
     subnet_ids = var.subnet_ids
     security_group_ids = var.security_group_ids
   }
-}
 
-resource "aws_lambda_function_event_invoke_config" "s3_trigger_dest" {
-  function_name = aws_lambda_function.s3_trigger.function_name
-
-  destination_config {
-    on_success {
-      destination = aws_sns_topic.process_topic.arn
+  environment {
+    variables = {
+      PROCESS_TOPIC_ARN = aws_sns_topic.process_topic.arn
     }
   }
 }
@@ -133,6 +129,17 @@ resource "aws_lambda_function" "processor" {
     subnet_ids = var.subnet_ids
     security_group_ids = var.security_group_ids
   }
+
+  environment {
+    variables = {
+      SAGEMAKER_TOPIC_ARN = aws_sns_topic.sagemaker_topic.arn
+    }
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "processor_sqs" {
+  event_source_arn = aws_sqs_queue.process_queue.arn
+  function_name    = aws_lambda_function.processor.arn
 }
 
 # sagemaker-caller Lambda
