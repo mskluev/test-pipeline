@@ -161,6 +161,12 @@ resource "aws_lambda_function" "sagemaker_caller" {
     subnet_ids = var.subnet_ids
     security_group_ids = var.security_group_ids
   }
+
+  environment {
+    variables = {
+      SAGEMAKER_ENDPOINT_NAME = aws_sagemaker_endpoint.triton_endpoint.name
+    }
+  }
 }
 
 
