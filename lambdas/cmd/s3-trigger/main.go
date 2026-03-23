@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -25,7 +26,7 @@ func init() {
 	}
 }
 
-func HandleRequest(ctx context.Context, event interface{}) error {
+func HandleRequest(ctx context.Context, event events.EventBridgeEvent) error {
 	if lc, ok := lambdacontext.FromContext(ctx); ok {
 		fmt.Printf("Lambda Context: %+v\n", lc)
 	}
@@ -43,11 +44,28 @@ func HandleRequest(ctx context.Context, event interface{}) error {
 		correlationID = lc.AwsRequestID
 	}
 
+	// Parse the S3 Event details
+	var s3Detail struct {
+		Bucket struct {
+			Name string `json:"name"`
+		} `json:"bucket"`
+		Object struct {
+			Key string `json:"key"`
+		} `json:"object"`
+	}
+
+	if err := json.Unmarshal(event.Detail, &s3Detail); err != nil {
+		fmt.Printf("Failed to unmarshal S3 detail: %v\n", err)
+	}
+
+	s3Uri := fmt.Sprintf("s3://%s/%s", s3Detail.Bucket.Name, s3Detail.Object.Key)
+
 	// Simulate passing the correlation_id through to the next event
 	nextEvent := &pb.ProcessingEvent{
 		CorrelationId: correlationID,
+		S3Uri:         s3Uri,
 	}
-	fmt.Printf("Passing correlation_id %s through to next stage via ProcessingEvent\n", nextEvent.CorrelationId)
+	fmt.Printf("Passing correlation_id %s and s3_uri %s through to next stage via ProcessingEvent\n", nextEvent.CorrelationId, nextEvent.S3Uri)
 
 	b, err := protojson.Marshal(nextEvent)
 	if err != nil {

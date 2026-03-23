@@ -66,8 +66,9 @@ func HandleRequest(ctx context.Context, event events.SQSEvent) error {
 		// Simulate passing the correlation_id through to the next event
 		nextEvent := &pb.SageMakerEvent{
 			CorrelationId: correlationID,
+			PayloadUri:    processingEvent.S3Uri,
 		}
-		fmt.Printf("Passing correlation_id %s through to SageMaker stage via SageMakerEvent\n", nextEvent.CorrelationId)
+		fmt.Printf("Passing correlation_id %s and payload_uri %s through to SageMaker stage via SageMakerEvent\n", nextEvent.CorrelationId, nextEvent.PayloadUri)
 
 		b, err := protojson.Marshal(nextEvent)
 		if err != nil {
