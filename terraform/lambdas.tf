@@ -163,9 +163,15 @@ resource "aws_lambda_function" "sagemaker_caller" {
   }
 
   environment {
-    variables = {
+    variables = merge(
+    {
       SAGEMAKER_ENDPOINT_NAME = aws_sagemaker_endpoint.triton_endpoint.name
-    }
+    },
+    # Only set if `aws_endpoint_url_sagemaker_runtime` is defined
+    var.aws_endpoint_url_sagemaker_runtime != null && var.aws_endpoint_url_sagemaker_runtime != "" ? {
+      AWS_ENDPOINT_URL_SAGEMAKER_RUNTIME = var.aws_endpoint_url_sagemaker_runtime
+    } : {}
+  )
   }
 }
 

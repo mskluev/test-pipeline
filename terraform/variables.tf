@@ -36,3 +36,9 @@ variable "triton_image_uri" {
     type = string
   
 }
+
+variable "aws_endpoint_url_sagemaker_runtime" {
+    description = "SageMaker proxy endpoint. Leave undefined to skip."
+    type = string
+    default = null
+}
