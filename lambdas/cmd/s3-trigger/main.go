@@ -26,66 +26,83 @@ func init() {
 	}
 }
 
-func HandleRequest(ctx context.Context, event events.EventBridgeEvent) error {
+func HandleRequest(ctx context.Context, sqsEvent events.SQSEvent) error {
 	if lc, ok := lambdacontext.FromContext(ctx); ok {
 		fmt.Printf("Lambda Context: %+v\n", lc)
 	}
 
-	eventBytes, err := json.MarshalIndent(event, "", "  ")
-	if err == nil {
-		fmt.Printf("s3-trigger received event:\n%s\n", string(eventBytes))
-	} else {
-		fmt.Printf("s3-trigger received event: %#v\n", event)
-	}
+	for _, record := range sqsEvent.Records {
+		var snsEntity struct {
+			Message string `json:"Message"`
+		}
+		if err := json.Unmarshal([]byte(record.Body), &snsEntity); err != nil {
+			fmt.Printf("Failed to unmarshal SQS body: %v\n", err)
+			continue
+		}
 
-	// Initialize correlation_id (e.g., from AWS Request ID)
-	correlationID := "generated-uuid-placeholder"
-	if lc, ok := lambdacontext.FromContext(ctx); ok {
-		correlationID = lc.AwsRequestID
-	}
+		var event events.EventBridgeEvent
+		if err := json.Unmarshal([]byte(snsEntity.Message), &event); err != nil {
+			fmt.Printf("Failed to unmarshal SNS message to EventBridge event: %v\n", err)
+			continue
+		}
 
-	// Parse the S3 Event details
-	var s3Detail struct {
-		Bucket struct {
-			Name string `json:"name"`
-		} `json:"bucket"`
-		Object struct {
-			Key string `json:"key"`
-		} `json:"object"`
-	}
+		eventBytes, err := json.MarshalIndent(event, "", "  ")
+		if err == nil {
+			fmt.Printf("s3-trigger received event:\n%s\n", string(eventBytes))
+		} else {
+			fmt.Printf("s3-trigger received event: %#v\n", event)
+		}
 
-	if err := json.Unmarshal(event.Detail, &s3Detail); err != nil {
-		fmt.Printf("Failed to unmarshal S3 detail: %v\n", err)
-	}
+		// Initialize correlation_id (e.g., from AWS Request ID)
+		correlationID := "generated-uuid-placeholder"
+		if lc, ok := lambdacontext.FromContext(ctx); ok {
+			correlationID = lc.AwsRequestID
+		}
 
-	s3Uri := fmt.Sprintf("s3://%s/%s", s3Detail.Bucket.Name, s3Detail.Object.Key)
+		// Parse the S3 Event details
+		var s3Detail struct {
+			Bucket struct {
+				Name string `json:"name"`
+			} `json:"bucket"`
+			Object struct {
+				Key string `json:"key"`
+			} `json:"object"`
+		}
 
-	// Simulate passing the correlation_id through to the next event
-	nextEvent := &pb.ProcessingEvent{
-		CorrelationId: correlationID,
-		S3Uri:         s3Uri,
-	}
-	fmt.Printf("Passing correlation_id %s and s3_uri %s through to next stage via ProcessingEvent\n", nextEvent.CorrelationId, nextEvent.S3Uri)
+		if err := json.Unmarshal(event.Detail, &s3Detail); err != nil {
+			fmt.Printf("Failed to unmarshal S3 detail: %v\n", err)
+			continue
+		}
 
-	b, err := protojson.Marshal(nextEvent)
-	if err != nil {
-		return fmt.Errorf("failed to marshal nextEvent: %w", err)
-	}
+		s3Uri := fmt.Sprintf("s3://%s/%s", s3Detail.Bucket.Name, s3Detail.Object.Key)
 
-	topicArn := os.Getenv("PROCESS_TOPIC_ARN")
-	if topicArn == "" {
-		return fmt.Errorf("PROCESS_TOPIC_ARN environment variable not set")
-	}
+		// Simulate passing the correlation_id through to the next event
+		nextEvent := &pb.ProcessingEvent{
+			CorrelationId: correlationID,
+			S3Uri:         s3Uri,
+		}
+		fmt.Printf("Passing correlation_id %s and s3_uri %s through to next stage via ProcessingEvent\n", nextEvent.CorrelationId, nextEvent.S3Uri)
 
-	msg := string(b)
-	_, err = snsClient.Publish(ctx, &sns.PublishInput{
-		Message:  &msg,
-		TopicArn: &topicArn,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to publish to SNS: %w", err)
+		b, err := protojson.Marshal(nextEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal nextEvent: %w", err)
+		}
+
+		topicArn := os.Getenv("PROCESS_TOPIC_ARN")
+		if topicArn == "" {
+			return fmt.Errorf("PROCESS_TOPIC_ARN environment variable not set")
+		}
+
+		msg := string(b)
+		_, err = snsClient.Publish(ctx, &sns.PublishInput{
+			Message:  &msg,
+			TopicArn: &topicArn,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to publish to SNS: %w", err)
+		}
+		fmt.Printf("Successfully published ProcessingEvent to %s\n", topicArn)
 	}
-	fmt.Printf("Successfully published ProcessingEvent to %s\n", topicArn)
 
 	return nil
 }

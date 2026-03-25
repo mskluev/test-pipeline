@@ -26,14 +26,18 @@ flowchart TD
     S3_Input -->|Triggers 'Object Created'| EventBridge
     
     EventBridge{EventBridge Rule}:::event
-    EventBridge -->|Invokes| Lambda_S3_Trigger
+    EventBridge -->|Publishes| SNS_Input
+    SNS_Input{{SNS Topic:\n`mskluev-s3-input-topic`}}:::messaging
     
     %% Processing Pipeline Part 1
     subgraph S3 Trigger Stage
+    SQS_Input[\SQS Queue:\n`mskluev-s3-input-queue`\]:::messaging
     Lambda_S3_Trigger[Lambda:\n`s3-trigger`]:::compute
     SNS_Process{{SNS Topic:\n`mskluev-process-topic`}}:::messaging
     end
     
+    SNS_Input -->|Forwards| SQS_Input
+    SQS_Input -->|Consumes| Lambda_S3_Trigger
     Lambda_S3_Trigger -->|Publishes\nProcessingEvent| SNS_Process
     SNS_Process -->|Forwards| SQS_Process
     

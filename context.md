@@ -60,20 +60,23 @@ All AWS resources are prefixed with `mskluev-`.
    - A user or external system drops a file into the input S3 bucket (`mskluev-pipeline-input-<account_id>`).
 2. **Event Trigger**: 
    - An S3 "Object Created" event is matched by an **EventBridge Rule**.
-   - EventBridge invokes the `s3-trigger` Lambda function, passing the event details.
-3. **Initial Dispatch**: 
-   - The `s3-trigger` Lambda reads the event to determine the S3 file location.
+   - EventBridge publishes the event payload to the `mskluev-s3-input-topic` **SNS Topic**.
+3. **Input Queue**:
+   - The SNS topic forwards the message to the `mskluev-s3-input-queue` **SQS Queue**.
+4. **Initial Dispatch**: 
+   - The `s3-trigger` Lambda consumes messages from the SQS queue.
+   - It reads the event to determine the S3 file location.
    - It constructs a `ProcessingEvent` (defined via Protobuf) and publishes it to the `mskluev-process-topic` **SNS Topic**.
-4. **Processing Queue**: 
+5. **Processing Queue**: 
    - The SNS topic forwards the message to the `mskluev-process-queue` **SQS Queue**.
-5. **Data Processing**: 
+6. **Data Processing**: 
    - The `processor` Lambda consumes messages from the SQS queue.
    - It performs the necessary data manipulation or validation.
    - Upon success, it constructs a `SageMakerEvent` and publishes it to the `mskluev-sagemaker-topic` **SNS Topic**.
-6. **Inference Queue**: 
+7. **Inference Queue**: 
    - The SageMaker SNS topic forwards the message to the `mskluev-sagemaker-queue` **SQS Queue**.
-7. **SageMaker Invocation**: 
+8. **SageMaker Invocation**: 
    - The `sagemaker-caller` Lambda consumes the event from the SQS queue.
    - It makes an API call to **SageMaker InvokeEndpointAsync** to offload the heavy machine learning inference.
-8. **Output**: 
+9. **Output**: 
    - SageMaker (configured separately) will ultimately drop the inference results into the output S3 bucket (`mskluev-pipeline-output-<account_id>`).

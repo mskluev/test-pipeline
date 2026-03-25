@@ -13,18 +13,9 @@ resource "aws_cloudwatch_event_rule" "s3_object_created" {
   })
 }
 
-# EventBridge target pointing to the first Lambda
-resource "aws_cloudwatch_event_target" "trigger_lambda" {
+# EventBridge target pointing to the new SNS topic
+resource "aws_cloudwatch_event_target" "trigger_sns" {
   rule      = aws_cloudwatch_event_rule.s3_object_created.name
-  target_id = "TriggerLambda"
-  arn       = aws_lambda_function.s3_trigger.arn
-}
-
-# Permission to allow EventBridge to invoke the Lambda
-resource "aws_lambda_permission" "allow_eventbridge" {
-  statement_id  = "AllowExecutionFromEventBridge"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.s3_trigger.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.s3_object_created.arn
+  target_id = "TriggerSNS"
+  arn       = aws_sns_topic.s3_input_topic.arn
 }

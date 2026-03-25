@@ -58,7 +58,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
         ]
         Resource = [
           aws_sqs_queue.process_queue.arn,
-          aws_sqs_queue.sagemaker_queue.arn
+          aws_sqs_queue.sagemaker_queue.arn,
+          aws_sqs_queue.s3_input_queue.arn
         ]
       },
       {
@@ -108,6 +109,11 @@ resource "aws_lambda_function" "s3_trigger" {
       PROCESS_TOPIC_ARN = aws_sns_topic.process_topic.arn
     }
   }
+}
+
+resource "aws_lambda_event_source_mapping" "s3_trigger_sqs" {
+  event_source_arn = aws_sqs_queue.s3_input_queue.arn
+  function_name    = aws_lambda_function.s3_trigger.arn
 }
 
 # processor Lambda
