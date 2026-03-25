@@ -1,16 +1,16 @@
 variable "permissions_boundary" {
-    description = "aws permissions boundary"
-    type = string
+  description = "aws permissions boundary"
+  type        = string
 }
 
 variable "subnet_ids" {
-    description = "aws subnet ids"
-    type = list(string)
+  description = "aws subnet ids"
+  type        = list(string)
 }
 
 variable "security_group_ids" {
-    description = "aws security group ids"
-    type = list(string)
+  description = "aws security group ids"
+  type        = list(string)
 }
 
 # SageMaker
@@ -26,19 +26,19 @@ variable "sm_instance_type" {
 }
 
 variable "sagemaker_iam_role" {
-    description = "ARN of the sagemaker iam role to use"
-    type = string
+  description = "ARN of the sagemaker iam role to use"
+  type        = string
 }
 
 variable "triton_image_uri" {
-    # `nvcr.io/nvidia/tritonserver:25.09-py3` re-tagged and pushed to ECR
-    description = "Triton docker image"
-    type = string
-  
+  # `nvcr.io/nvidia/tritonserver:25.09-py3` re-tagged and pushed to ECR
+  description = "Triton docker image"
+  type        = string
+
 }
 
 variable "aws_endpoint_url_sagemaker_runtime" {
-    description = "SageMaker proxy endpoint. Leave undefined to skip."
-    type = string
-    default = null
+  description = "SageMaker proxy endpoint. Leave undefined to skip."
+  type        = string
+  default     = null
 }
