@@ -64,6 +64,10 @@ resource "aws_lambda_function" "sagemaker_caller" {
       } : {}
     )
   }
+
+  tracing_config {
+    mode = "Active"
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "sagemaker_sqs" {

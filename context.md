@@ -23,6 +23,7 @@ This document details the *how* of the AWS Data Processing Pipeline, covering th
 - **SNS (Simple Notification Service)**: Publishes messages to decouple the producer from multiple potential consumers.
 - **SQS (Simple Queue Service)**: Buffers messages to ensure reliable delivery and throttle load to downstream Lambdas.
 - **SageMaker**: The destination for the processed data, utilized via Asynchronous Endpoints.
+- **AWS X-Ray**: Provides end-to-end distributed tracing across the pipeline, tracking the journey of data from ingestion through the various AWS services and Lambda functions.
 
 ---
 
@@ -54,7 +55,7 @@ test-pipeline/
 
 ## System Architecture & Data Flow
 
-All AWS resources are prefixed with `mskluev-`.
+All AWS resources are prefixed with `mskluev-`. **AWS X-Ray** tracing is enabled across all integrated AWS services (EventBridge, SNS, SQS, and Lambda) to correlate the invocation sequence, track performance, and identify bottlenecks.
 
 1. **Ingestion**: 
    - A user or external system drops a file into the input S3 bucket (`mskluev-pipeline-input-<account_id>`).

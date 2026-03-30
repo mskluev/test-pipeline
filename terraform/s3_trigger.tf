@@ -59,6 +59,10 @@ resource "aws_lambda_function" "s3_trigger" {
       PROCESS_TOPIC_ARN = aws_sns_topic.process_topic.arn
     }
   }
+
+  tracing_config {
+    mode = "Active"
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "s3_trigger_sqs" {
@@ -68,5 +72,6 @@ resource "aws_lambda_event_source_mapping" "s3_trigger_sqs" {
 
 # SNS Topic for processing events
 resource "aws_sns_topic" "process_topic" {
-  name = "mskluev-process-topic"
+  name           = "mskluev-process-topic"
+  tracing_config = "Active"
 }

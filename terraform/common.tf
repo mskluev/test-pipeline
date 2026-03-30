@@ -24,6 +24,11 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_xray_write" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+}
+
 # Common policy for lambdas (S3, SNS, SQS permissions)
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "service-mskluev-lambda-permissions"

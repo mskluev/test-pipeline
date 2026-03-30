@@ -59,6 +59,10 @@ resource "aws_lambda_function" "processor" {
       SAGEMAKER_TOPIC_ARN = aws_sns_topic.sagemaker_topic.arn
     }
   }
+
+  tracing_config {
+    mode = "Active"
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "processor_sqs" {
@@ -68,5 +72,6 @@ resource "aws_lambda_event_source_mapping" "processor_sqs" {
 
 # SNS Topic for SageMaker calls
 resource "aws_sns_topic" "sagemaker_topic" {
-  name = "mskluev-sagemaker-topic"
+  name           = "mskluev-sagemaker-topic"
+  tracing_config = "Active"
 }

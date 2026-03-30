@@ -31,7 +31,8 @@ resource "aws_cloudwatch_event_target" "trigger_sns" {
 
 # S3 Input SNS Topic
 resource "aws_sns_topic" "s3_input_topic" {
-  name = "mskluev-s3-input-topic"
+  name           = "mskluev-s3-input-topic"
+  tracing_config = "Active"
 }
 
 # SNS Topic Policy to allow EventBridge to write to it
